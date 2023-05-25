@@ -91,8 +91,31 @@ app.post("/todos/", async (request, response) => {
 
 app.put("/todos/:todoId/", async (request, response) => {
   const { todoId } = request.params;
-  const todoDetails = request.body;
-  const { status, priority, todo } = todoDetails;
+  const requestBody = request.body;
+
+  let updatedColumn = "";
+
+  switch (true) {
+    case requestBody.status !== undefined:
+      updatedColumn = "Status";
+      break;
+    case requestBody.priority !== undefined:
+      updatedColumn = "Priority";
+      break;
+    case requestBody.todo !== undefined:
+      updatedColumn = "Todo";
+      break;
+  }
+  const previousTodoQuery = `SELECT * FROM todo
+   WHERE id = ${todoId};`;
+  const previousTodo = await db.get(previousTodoQuery);
+
+  const {
+    todo = previousTodo.todo,
+    status = previousTodo.status,
+    priority = previousTodo.priority,
+  } = request.body;
+
   const updateTodoQuery = `
     UPDATE todo SET
     status = '${status}',
@@ -101,7 +124,7 @@ app.put("/todos/:todoId/", async (request, response) => {
     WHERE id = ${todoId};`;
 
   await db.run(updateTodoQuery);
-  response.send("Status Updated");
+  response.send(`${updatedColumn} Updated`);
 });
 
 app.delete("/todos/:todoId/", async (request, response) => {
